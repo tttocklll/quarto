@@ -9,6 +9,9 @@ public class GameController : MonoBehaviour
     // camera
     private Camera camera_object;
     private RaycastHit hit;
+
+    // prefabs
+    public GameObject Piece_0000;
     // Start is called before the first frame update
     void Start()
     {
@@ -22,10 +25,15 @@ public class GameController : MonoBehaviour
             // Ray ray = camera_object.ScreenPointToRay(Input.mousePosition);
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out hit, Mathf.Infinity)) {
-                int x = (Mathf.RoundToInt(hit.point.x) + 3) / 2;
-                int z = (Mathf.RoundToInt(hit.point.z) + 3) / 2;
+                Vector3 position = hit.collider.gameObject.transform.position;
+                int x = Mathf.RoundToInt((position.x + 3) / 2);
+                int z = Mathf.RoundToInt((position.z + 3) / 2);
                 Debug.Log(x);
                 Debug.Log(z);
+                GameObject cur_piece = Instantiate(Piece_0000);
+                
+                position.y = 1.5F;
+                cur_piece.transform.position = position;
             }
         }
     }
