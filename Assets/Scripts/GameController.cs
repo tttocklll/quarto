@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -59,8 +60,16 @@ public class GameController : MonoBehaviour
                     squares[x][z] = pieceName.Substring(6, 4);
                     selectedPiece.transform.position = position;
                     phase = PIECE;
+
+                    // DEBUG: 盤面表示
                     for (int i=0; i<4; i++) {
                         Debug.Log(string.Join(",",squares[i]));
+                    }
+
+                    // 勝利判定
+                    if (isQuarto())
+                    {
+                        Debug.Log("Quarto!");
                     }
                 }
             }
@@ -74,5 +83,98 @@ public class GameController : MonoBehaviour
         {
             squares[i] = new string[4];
         }
+    }
+
+    private bool isQuarto()
+    {
+        return isVerticalQuarto() || isHorizontalQuarto() || isLeftCrossQuarto() || isRightCrossQuarto();
+    }
+
+    private bool isVerticalQuarto()
+    {
+        for (int i=0; i<4; i++) {
+            bool[] result = {true, true, true, true};
+            string first = squares[0][i];
+            if (first == "" || first == null) continue;
+            bool flag = true;
+            for (int j=1; j<4; j++) {
+                if (squares[j][i] == "" || squares[j][i] == null){ // 駒なし
+                    flag = false;
+                    break;
+                }
+                for (int idx=0; idx<4; idx++) {
+                    if (squares[j][i][idx] != first[idx]) {
+                        result[idx] = false;
+                    }
+                }
+            }
+            if (flag && result.Contains(true)) return true;
+        }
+        return false;
+    }
+
+    private bool isHorizontalQuarto()
+    {
+        for (int i=0; i<4; i++) {
+            bool[] result = {true, true, true, true};
+            string first = squares[i][0];
+            if (first == "" || first == null) continue;
+            bool flag = true;
+            for (int j=1; j<4; j++) {
+                if (squares[i][j] == "" || squares[i][j] == null){ // 駒なし
+                    flag = false;
+                    break;
+                }
+                for (int idx=0; idx<4; idx++) {
+                    if (squares[i][j][idx] != first[idx]) {
+                        result[idx] = false;
+                    }
+                }
+            }
+            if (flag && result.Contains(true)) return true;
+        }
+        return false;
+    }
+
+    private bool isLeftCrossQuarto()
+    {
+        bool[] result = {true, true, true, true};
+        string first = squares[0][0];
+        if (first == "" || first == null) return false;
+        bool flag = true;
+        for (int i=1; i<4; i++) {
+            if (squares[i][i] == "" || squares[i][i] == null){ // 駒なし
+                flag = false;
+                break;
+            }
+            for (int idx=0; idx<4; idx++) {
+                if (squares[i][i][idx] != first[idx]) {
+                    result[idx] = false;
+                }
+            }
+        }
+        if (flag && result.Contains(true)) return true;
+        return false;
+    }
+
+    private bool isRightCrossQuarto()
+    {
+        bool[] result = {true, true, true, true};
+        string first = squares[0][3];
+        if (first == "" || first == null) return false;
+        bool flag = true;
+        for (int i=1; i<4; i++) {
+            if (squares[i][3-i] == "" || squares[i][3-i] == null){ // 駒なし
+                flag = false;
+                break;
+            }
+            for (int idx=0; idx<4; idx++) {
+                if (squares[i][3-i][idx] != first[idx]) {
+                    result[idx] = false;
+                }
+            }
+        }
+        if (flag && result.Contains(true)) return true;
+        return false;
     }
 }
