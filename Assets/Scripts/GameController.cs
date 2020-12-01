@@ -95,10 +95,10 @@ public class GameController : MonoBehaviour
         for (int i=0; i<4; i++) {
             bool[] result = {true, true, true, true};
             string first = squares[0][i];
-            if (first == "" || first == null) continue;
+            if (string.IsNullOrEmpty(first)) continue;
             bool flag = true;
             for (int j=1; j<4; j++) {
-                if (squares[j][i] == "" || squares[j][i] == null){ // 駒なし
+                if (string.IsNullOrEmpty(squares[j][i])){ // 駒なし
                     flag = false;
                     break;
                 }
@@ -118,10 +118,10 @@ public class GameController : MonoBehaviour
         for (int i=0; i<4; i++) {
             bool[] result = {true, true, true, true};
             string first = squares[i][0];
-            if (first == "" || first == null) continue;
+            if (string.IsNullOrEmpty(first)) continue;
             bool flag = true;
             for (int j=1; j<4; j++) {
-                if (squares[i][j] == "" || squares[i][j] == null){ // 駒なし
+                if (string.IsNullOrEmpty(squares[i][j])){ // 駒なし
                     flag = false;
                     break;
                 }
@@ -140,10 +140,10 @@ public class GameController : MonoBehaviour
     {
         bool[] result = {true, true, true, true};
         string first = squares[0][0];
-        if (first == "" || first == null) return false;
+        if (string.IsNullOrEmpty(first)) return false;
         bool flag = true;
         for (int i=1; i<4; i++) {
-            if (squares[i][i] == "" || squares[i][i] == null){ // 駒なし
+            if (string.IsNullOrEmpty(squares[i][i])){ // 駒なし
                 flag = false;
                 break;
             }
@@ -161,10 +161,10 @@ public class GameController : MonoBehaviour
     {
         bool[] result = {true, true, true, true};
         string first = squares[0][3];
-        if (first == "" || first == null) return false;
+        if (string.IsNullOrEmpty(first)) return false;
         bool flag = true;
         for (int i=1; i<4; i++) {
-            if (squares[i][3-i] == "" || squares[i][3-i] == null){ // 駒なし
+            if (string.IsNullOrEmpty(squares[i][3-i])){ // 駒なし
                 flag = false;
                 break;
             }
