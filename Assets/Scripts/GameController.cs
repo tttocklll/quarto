@@ -13,6 +13,9 @@ public class GameController : MonoBehaviour
     private Camera camera_object;
     private RaycastHit hit;
 
+    // prefabs
+    public GameObject QuartoText;
+
     // event system
     [SerializeField] EventSystem eventSystem;
     GameObject selectedObj;
@@ -68,7 +71,7 @@ public class GameController : MonoBehaviour
                     // 勝利判定
                     if (isQuarto())
                     {
-                        Debug.Log("Quarto!");
+                        GameObject quartoText = Instantiate(QuartoText);
                     }
                 }
             }
