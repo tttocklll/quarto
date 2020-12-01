@@ -29,7 +29,7 @@ public class GameController : MonoBehaviour
     int alreadyPutCount = 0;
 
     // turn
-    private const bool CPU = false;
+    private const bool COM = false;
     private const bool YOU = true;
     bool turn = YOU;
 
@@ -43,7 +43,7 @@ public class GameController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetMouseButtonDown(0)) {
+        if (Input.GetMouseButtonDown(0) && turn == YOU) {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out hit, Mathf.Infinity)) {
                 selectedObj = hit.collider.gameObject;
@@ -74,13 +74,43 @@ public class GameController : MonoBehaviour
                     squares[x][z] = pieceName.Substring(6, 4);
                     selectedPiece.transform.position = position;
                     phase = PIECE;
-                    Debug.Log(alreadyPut.Length);
 
                     // 勝利判定
                     if (isQuarto())
                     {
                         GameObject quartoText = Instantiate(QuartoText);
                     }
+                }
+            }
+        } else if (turn == COM) {
+            // StartCoroutine("COMTurn");
+            if (phase == PIECE) {
+                pieceName = calcPiece();
+                Debug.Log(pieceName);
+                selectedPiece = GameObject.Find(pieceName);
+                alreadyPut[alreadyPutCount++] = pieceName;
+
+                Vector3 position = selectedPiece.transform.position;
+                position.x = -11;
+                position.z = 0;
+                selectedPiece.transform.position = position;
+                phase = PUT;
+                turn = !turn;
+            } else if (phase == PUT) {
+                var (x, z) = calcPut();
+                Debug.Log(x);
+                Debug.Log(z);
+                squares[x][z] = pieceName.Substring(6, 4);
+
+                Vector3 position = selectedPiece.transform.position;
+                position.x = x * 2 - 3;
+                position.z = z * 2 - 3;
+                selectedPiece.transform.position = position;
+                phase = PIECE;
+
+                if (isQuarto())
+                {
+                    GameObject quartoText = Instantiate(QuartoText);
                 }
             }
         }
@@ -97,6 +127,30 @@ public class GameController : MonoBehaviour
         for (int i = 0; i < 16;i++)
         {
             alreadyPut[i] = "";
+        }
+    }
+
+    private string calcPiece() {
+        int curRnd;
+        string pieceName;
+        while (true) {
+            curRnd = Random.Range(0, 16);
+            pieceName = "Piece_" + System.Convert.ToString(curRnd, 2).PadLeft(4, '0');
+            if (!alreadyPut.Contains(pieceName)) {
+                alreadyPut[alreadyPutCount++] = pieceName;
+                return pieceName;
+            }
+        }
+    }
+
+    private (int, int) calcPut() {
+        int x, z;
+        while (true) {
+            x = Random.Range(0, 4);
+            z = Random.Range(0, 4);
+            if (string.IsNullOrEmpty(squares[x][z])) {
+                return (x, z);
+            }
         }
     }
 
