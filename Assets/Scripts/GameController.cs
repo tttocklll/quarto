@@ -25,6 +25,8 @@ public class GameController : MonoBehaviour
     int phase = PIECE;
     string selectedName;
     string pieceName;
+    string[] alreadyPut = new string[16];
+    int alreadyPutCount = 0;
 
     // turn
     private const bool CPU = false;
@@ -47,8 +49,13 @@ public class GameController : MonoBehaviour
                 selectedObj = hit.collider.gameObject;
                 selectedName = selectedObj.name;
                 if (phase == PIECE && selectedName.Substring(0, 5) == "Piece") { // 相手への駒選択
+                    // 盤面上のものを触ってしまった場合なにもしない
+                    if (alreadyPut.Contains(selectedName)) return;
+
                     selectedPiece = selectedObj;
                     pieceName = selectedName;
+                    alreadyPut[alreadyPutCount++] = pieceName;
+
                     Vector3 position = selectedObj.transform.position;
                     position.x = -11;
                     position.z = 0;
@@ -67,6 +74,7 @@ public class GameController : MonoBehaviour
                     squares[x][z] = pieceName.Substring(6, 4);
                     selectedPiece.transform.position = position;
                     phase = PIECE;
+                    Debug.Log(alreadyPut.Length);
 
                     // 勝利判定
                     if (isQuarto())
@@ -84,6 +92,11 @@ public class GameController : MonoBehaviour
         for (int i = 0; i < 4;i++)
         {
             squares[i] = new string[4];
+        }
+
+        for (int i = 0; i < 16;i++)
+        {
+            alreadyPut[i] = "";
         }
     }
 
