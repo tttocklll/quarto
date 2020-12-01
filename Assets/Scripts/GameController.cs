@@ -60,15 +60,10 @@ public class GameController : MonoBehaviour
 
                     // すでにおいてあったらだめ
                     if (!string.IsNullOrEmpty(squares[x][z])) return;
-                    
+
                     squares[x][z] = pieceName.Substring(6, 4);
                     selectedPiece.transform.position = position;
                     phase = PIECE;
-
-                    // DEBUG: 盤面表示
-                    for (int i=0; i<4; i++) {
-                        Debug.Log(string.Join(",",squares[i]));
-                    }
 
                     // 勝利判定
                     if (isQuarto())
