@@ -3,7 +3,24 @@ guid: cf66479cb479e8746ad735a168cc3696
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - Piece_0000: {fileID: 5496455784295694505, guid: cd8082f593ef3a8499e2ebcade967817,
+      type: 3}
+  - Piece_0001: {instanceID: 0}
+  - Piece_0010: {instanceID: 0}
+  - Piece_0011: {instanceID: 0}
+  - Piece_0100: {instanceID: 0}
+  - Piece_0101: {instanceID: 0}
+  - Piece_0110: {instanceID: 0}
+  - Piece_0111: {instanceID: 0}
+  - Piece_1000: {instanceID: 0}
+  - Piece_1001: {instanceID: 0}
+  - Piece_1010: {instanceID: 0}
+  - Piece_1011: {instanceID: 0}
+  - Piece_1100: {instanceID: 0}
+  - Piece_1101: {instanceID: 0}
+  - Piece_1110: {instanceID: 0}
+  - Piece_1111: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
