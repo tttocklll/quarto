@@ -57,6 +57,10 @@ public class GameController : MonoBehaviour
                     position.y = selectedPiece.transform.position.y;
                     int x = Mathf.RoundToInt((position.x + 3) / 2);
                     int z = Mathf.RoundToInt((position.z + 3) / 2);
+
+                    // すでにおいてあったらだめ
+                    if (!string.IsNullOrEmpty(squares[x][z])) return;
+                    
                     squares[x][z] = pieceName.Substring(6, 4);
                     selectedPiece.transform.position = position;
                     phase = PIECE;
