@@ -51,7 +51,7 @@ public class SceneViewCamera : MonoBehaviour
       return;
 
     if(Input.GetMouseButton(2))
-      transform.Translate(-diff * Time.deltaTime * moveSpeed);
+      transform.Translate(-diff * Time.deltaTime * moveSpeed * 10);
     else if(Input.GetMouseButton(1))
       CameraRotate(new Vector2(-diff.y, diff.x) * rotateSpeed);
 
