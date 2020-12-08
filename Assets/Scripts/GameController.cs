@@ -37,6 +37,8 @@ public class GameController : MonoBehaviour
     private List<string> remainingPieces = new List<string>();
     private bool isEnd = false;
     private const int DEPTH = 3;
+    private const int MAX_VAL = 100000000;
+    private const int MIN_VAL = -100000000;
 
     // Start is called before the first frame update
     void Start()
@@ -90,15 +92,21 @@ public class GameController : MonoBehaviour
                         GameObject quartoText = Instantiate(QuartoText);
                         isEnd = true;
                         return;
+                    } else if (remainingPieces.Count <= 0) {
+                        GameObject quartoText = Instantiate(QuartoText);
+                        quartoText.GetComponent<TextMesh>().text = "DRAW";
+                        quartoText.GetComponent<TextMesh>().color = Color.blue;
+                        isEnd = true;
+                        return;
                     }
                 }
             }
         } else if (turn == COM && !isComWorking) {
             isComWorking = true;
-            int nextX, nextZ;
+            int nextX, nextZ, eval;
             string nextPiece;
-            (_, nextX, nextZ, nextPiece) = negaMax(DEPTH, pieceName, remainingPieces);
-            Debug.LogFormat("x = {0}, z = {1}, piece = {2}", nextX, nextZ, nextPiece);
+            (eval, nextX, nextZ, nextPiece) = negaMax(DEPTH, pieceName, remainingPieces, MIN_VAL, MAX_VAL);
+            Debug.LogFormat("x = {0}, z = {1}, piece = {2}, eval = {3}", nextX, nextZ, nextPiece, eval);
 
             // phase == PUT
             squares[nextX][nextZ] = pieceName.Substring(6, 4);
@@ -147,7 +155,7 @@ public class GameController : MonoBehaviour
     }
 
     // nega max 法により最適手を求める
-    private (int, int, int, string) negaMax(int limit, string nextPiece, List<string> curRemainingPieces) {
+    private (int, int, int, string) negaMax(int limit, string nextPiece, List<string> curRemainingPieces, int alpha, int beta) {
         if (limit <= 0) { // 深さ制限
             return (getHeuristicVal(), 0, 0, "");
         }
@@ -155,7 +163,7 @@ public class GameController : MonoBehaviour
         // 合法手を生成
         List<(int, int)> nextMoves = getNextMoves(nextPiece);
 
-        int maxVal = -1000000000;
+        int maxVal = MIN_VAL;
         int curVal;
         (int x, int z) maxMove = (0, 0);
         string maxPiece = "";
@@ -166,14 +174,15 @@ public class GameController : MonoBehaviour
             // 次の駒を選んで次へ
             foreach (string piece in curRemainingPieces.ToArray()) { // 削除・追加時のエラー回避
                 curRemainingPieces.Remove(piece);
-                (curVal, _, _, _) = negaMax(limit - 1, piece, curRemainingPieces);
+                (curVal, _, _, _) = negaMax(limit - 1, piece, curRemainingPieces, -beta, -System.Math.Max(alpha, maxVal));
                 curVal *= -1;
+                curRemainingPieces.Add(piece);
                 if (maxVal < curVal) {
                     maxVal = curVal;
                     maxMove = move;
                     maxPiece = piece;
                 }
-                curRemainingPieces.Add(piece);
+                if (maxVal >= beta) break;
             }
 
             // 手を戻す
@@ -194,8 +203,97 @@ public class GameController : MonoBehaviour
     }
 
     private int getHeuristicVal(){
+        // state[i] := 1ラインに同種の駒がi個あり、かつ異種がない
+        // state[3]があるなら、あと一つ空いているところに同種を置けばQuarto!
+        int[] state = {0, 0, 0, 0, 0};
+        int[] result = {0, 0, 0, 0};
+        string first = "";
         // squaresの状態から評価
-        return Random.Range(0, 10000);
+        // vertical
+        for (int i=0; i<4; i++) {
+            result = FillArray(result, 0);
+            first = "";
+            for (int j=0; j<4; j++) {
+                if (string.IsNullOrEmpty(squares[j][i])) continue;
+                if (string.IsNullOrEmpty(first)){
+                    first = squares[j][i];
+                    result = FillArray(result, 1);
+                    continue;
+                }
+                for (int idx = 0; idx < 4; idx++) {
+                    if (squares[j][i][idx] == first[idx]) result[idx]++;
+                    else result[idx] = -100;
+                }
+            }
+            for (int idx=0; idx<4; idx++) {
+                if (result[idx] >= 0) {
+                    state[result[idx]]++;
+                }
+            }
+        }
+        // horizontal
+        for (int i=0; i<4; i++) {
+            result = FillArray(result, 0);
+            first = "";
+            for (int j=0; j<4; j++) {
+                if (string.IsNullOrEmpty(squares[i][j])) continue;
+                if (string.IsNullOrEmpty(first)){
+                    first = squares[i][j];
+                    result = FillArray(result, 1);
+                    continue;
+                }
+                for (int idx = 0; idx < 4; idx++) {
+                    if (squares[i][j][idx] == first[idx]) result[idx]++;
+                    else result[idx] = -100;
+                }
+            }
+            for (int idx=0; idx<4; idx++) {
+                if (result[idx] >= 0) {
+                    state[result[idx]]++;
+                }
+            }
+        }
+        // left diagnosis
+        result = FillArray(result, 0);
+        first = "";
+        for (int i=0; i<4; i++) {
+            if (string.IsNullOrEmpty(squares[i][i])) continue;
+            if (string.IsNullOrEmpty(first)) {
+                first = squares[i][i];
+                result = FillArray(result, 1);
+                continue;
+            }
+            for (int idx = 0; idx < 4; idx++) {
+                if (squares[i][i][idx] == first[idx]) result[idx]++;
+                else result[idx] = -100;
+            }
+        }
+        for (int idx=0; idx<4; idx++) {
+            if (result[idx] >= 0) {
+                state[result[idx]]++;
+            }
+        }
+        // right diagnosis
+        result = FillArray(result, 0);
+        first = "";
+        for (int i=0; i<4; i++) {
+            if (string.IsNullOrEmpty(squares[i][3-i])) continue;
+            if (string.IsNullOrEmpty(first)) {
+                first = squares[i][3-i];
+                result = FillArray(result, 1);
+                continue;
+            }
+            for (int idx = 0; idx < 4; idx++) {
+                if (squares[i][3-i][idx] == first[idx]) result[idx]++;
+                else result[idx] = -100;
+            }
+        }
+        for (int idx=0; idx<4; idx++) {
+            if (result[idx] >= 0) {
+                state[result[idx]]++;
+            }
+        }
+        return (state[4] > 0) ? 100 : state[3] * 3 - state[2] * 1;
     }
 
     // 勝利判定
@@ -292,11 +390,21 @@ public class GameController : MonoBehaviour
         return false;
     }
 
-    private void displayBoard() {
+    // misc
+    private void displayBoard()
+    {
         var temp = new List<string>();
         for (int i=0; i<4; i++) {
             temp.Add(string.Join(" | ", squares[i]));
         }
         Debug.Log(string.Join("\n", temp));
+    }
+
+
+    private int[] FillArray(int[] array, int fillItem) {
+        for (int i=0; i<array.Length; i++) {
+            array[i] = fillItem;
+        }
+        return array;
     }
 }
