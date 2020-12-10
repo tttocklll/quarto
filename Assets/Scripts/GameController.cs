@@ -36,14 +36,20 @@ public class GameController : MonoBehaviour
     private List<string> alreadyPut = new List<string>(); // いらないかも
     private List<string> remainingPieces = new List<string>();
     private bool isEnd = false;
+    private bool ALPHA_BETA = false;
     private const int DEPTH = 3;
-    private const int MAX_VAL = 100000000;
-    private const int MIN_VAL = -100000000;
+    private const int MAX_VAL = 100;
+    private const int MIN_VAL = -100;
+
+    // stopwatch
+    private System.Diagnostics.Stopwatch sw;
+    private int sumCount = 0;
 
     // Start is called before the first frame update
     void Start()
     {
         camera_object = GameObject.Find("Main Camera").GetComponent<Camera>();
+        sw = new System.Diagnostics.Stopwatch();
         InitializeArray();
     }
 
@@ -62,6 +68,7 @@ public class GameController : MonoBehaviour
 
                     selectedPiece = selectedObj;
                     pieceName = selectedName;
+                    Debug.LogFormat("YOU PIECE: {0}", selectedName);
                     alreadyPut.Add(pieceName);
                     remainingPieces.Remove(pieceName);
 
@@ -80,17 +87,19 @@ public class GameController : MonoBehaviour
                     // すでにおいてあったらだめ
                     if (!string.IsNullOrEmpty(squares[x][z])) return;
 
+                    Debug.LogFormat("YOU PUT: ({0}, {1})", x, z);
                     squares[x][z] = pieceName.Substring(6, 4);
                     selectedPiece.transform.position = position;
                     phase = PIECE;
 
-                    displayBoard();
+                    // displayBoard();
 
                     // 勝利判定
                     if (isQuarto())
                     {
                         GameObject quartoText = Instantiate(QuartoText);
                         isEnd = true;
+                        Debug.Log((float)sw.ElapsedMilliseconds / sumCount);
                         return;
                     } else if (remainingPieces.Count <= 0) {
                         GameObject quartoText = Instantiate(QuartoText);
@@ -102,11 +111,15 @@ public class GameController : MonoBehaviour
                 }
             }
         } else if (turn == COM && !isComWorking) {
+            sw.Start();
+            sumCount++;
             isComWorking = true;
             int nextX, nextZ, eval;
             string nextPiece;
-            (eval, nextX, nextZ, nextPiece) = negaMax(DEPTH, pieceName, remainingPieces, MIN_VAL, MAX_VAL);
-            Debug.LogFormat("x = {0}, z = {1}, piece = {2}, eval = {3}", nextX, nextZ, nextPiece, eval);
+            (eval, nextX, nextZ, nextPiece) = negaMax(0, pieceName, remainingPieces, MIN_VAL, MAX_VAL);
+            Debug.LogFormat("COM PUT: ({0}, {1})", nextX, nextZ);
+            Debug.LogFormat("COM PIECE: {0}", nextPiece);
+            Debug.LogFormat("COM EVAL: {0}", eval);
 
             // phase == PUT
             squares[nextX][nextZ] = pieceName.Substring(6, 4);
@@ -114,11 +127,13 @@ public class GameController : MonoBehaviour
             position.x = nextX * 2 - 3;
             position.z = nextZ * 2 - 3;
             selectedPiece.transform.position = position;
-            displayBoard();
+            // displayBoard();
             if (isQuarto())
             {
+                sw.Stop();
                 GameObject quartoText = Instantiate(QuartoText);
                 isEnd = true;
+                Debug.Log((float)sw.ElapsedMilliseconds / sumCount);
                 return;
             }
             phase = PIECE;
@@ -136,6 +151,8 @@ public class GameController : MonoBehaviour
             phase = PUT;
             turn = !turn;
             isComWorking = false;
+            sw.Stop();
+            Debug.Log(sw.ElapsedMilliseconds + "ms");
         }
     }
 
@@ -155,38 +172,62 @@ public class GameController : MonoBehaviour
     }
 
     // nega max 法により最適手を求める
-    private (int, int, int, string) negaMax(int limit, string nextPiece, List<string> curRemainingPieces, int alpha, int beta) {
-        if (limit <= 0) { // 深さ制限
-            return (getHeuristicVal(), 0, 0, "");
+    private (int, int, int, string) negaMax(int depth, string nextPiece, List<string> curRemainingPieces, int alpha, int beta) {
+        List<(int, int)> nextMoves;
+        int maxVal, curVal;
+        if (depth == DEPTH) { // 深さ制限
+            // 合法手を生成
+            nextMoves = getNextMoves(nextPiece);
+            maxVal = MIN_VAL;
+            foreach ((int x, int z) move in nextMoves) {
+                // 手を打つ
+                squares[move.x][move.z] = nextPiece.Substring(6, 4);
+                curVal = getHeuristicVal();
+                // if (curVal == 100) {
+                //     Debug.LogFormat("WINorLOSE: {0} ({1}, {2})", nextPiece, move.x, move.z);
+                //     displayBoard();
+                // }
+                // 手を戻す
+                squares[move.x][move.z] = "";
+
+                if (maxVal < curVal) maxVal = curVal;
+                if (maxVal >= beta) break;
+            }
+            return (maxVal, 0, 0, "");
         }
 
         // 合法手を生成
-        List<(int, int)> nextMoves = getNextMoves(nextPiece);
+        nextMoves = getNextMoves(nextPiece);
 
-        int maxVal = MIN_VAL;
-        int curVal;
+        maxVal = MIN_VAL;
         (int x, int z) maxMove = (0, 0);
         string maxPiece = "";
         foreach ((int x, int z) move in nextMoves) {
             // 手を打つ
             squares[move.x][move.z] = nextPiece.Substring(6, 4);
+            if (isQuarto()) {
+                squares[move.x][move.z] = "";
+                return (MAX_VAL, move.x, move.z, nextPiece);
+            }
 
             // 次の駒を選んで次へ
             foreach (string piece in curRemainingPieces.ToArray()) { // 削除・追加時のエラー回避
                 curRemainingPieces.Remove(piece);
-                (curVal, _, _, _) = negaMax(limit - 1, piece, curRemainingPieces, -beta, -System.Math.Max(alpha, maxVal));
+                (curVal, _, _, _) = negaMax(depth + 1, piece, curRemainingPieces, -beta, -System.Math.Max(alpha, maxVal));
                 curVal *= -1;
                 curRemainingPieces.Add(piece);
                 if (maxVal < curVal) {
                     maxVal = curVal;
                     maxMove = move;
                     maxPiece = piece;
+                    // Debug.LogFormat("update: maxPiece={0}, move=({2}, {3}), eval={1}", maxPiece, maxVal, move.x, move.z);
                 }
-                if (maxVal >= beta) break;
+                if (maxVal >= beta && ALPHA_BETA) break;
             }
 
             // 手を戻す
             squares[move.x][move.z] = "";
+            if (maxVal >= beta && ALPHA_BETA) break;
         }
         return (maxVal, maxMove.x, maxMove.z, maxPiece);
     }
@@ -293,7 +334,7 @@ public class GameController : MonoBehaviour
                 state[result[idx]]++;
             }
         }
-        return (state[4] > 0) ? 100 : state[3] * 3 - state[2] * 1;
+        return (state[4] > 0) ? MAX_VAL : state[3] * 10 + state[2] * 3;
     }
 
     // 勝利判定
