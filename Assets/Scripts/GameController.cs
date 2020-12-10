@@ -29,6 +29,7 @@ public class GameController : MonoBehaviour
     private const bool YOU = true;
     private bool turn = YOU;
     private bool isComWorking = false;
+    Text turnText;
 
     // misc
     private string selectedName;
@@ -36,7 +37,7 @@ public class GameController : MonoBehaviour
     private List<string> alreadyPut = new List<string>(); // いらないかも
     private List<string> remainingPieces = new List<string>();
     private bool isEnd = false;
-    private bool ALPHA_BETA = false;
+    private bool ALPHA_BETA = true;
     private const int DEPTH = 3;
     private const int MAX_VAL = 100;
     private const int MIN_VAL = -100;
@@ -49,6 +50,9 @@ public class GameController : MonoBehaviour
     void Start()
     {
         camera_object = GameObject.Find("Main Camera").GetComponent<Camera>();
+        turnText = GameObject.Find("Text").GetComponent<Text>();
+        turnText.text = turn == YOU ? "TURN: YOU" : "TURN: COM";
+        turnText.color = turn == YOU ? Color.red : Color.white;
         sw = new System.Diagnostics.Stopwatch();
         InitializeArray();
     }
@@ -78,6 +82,8 @@ public class GameController : MonoBehaviour
                     selectedObj.transform.position = position;
                     phase = PUT;
                     turn = !turn;
+                    turnText.text = "TURN: COM";
+                    turnText.color = Color.white;
                 } else if (phase == PUT && selectedName.Substring(0, 5) == "Cylin") { // 駒を盤面に置く
                     Vector3 position = selectedObj.transform.position;
                     position.y = selectedPiece.transform.position.y;
@@ -98,6 +104,7 @@ public class GameController : MonoBehaviour
                     if (isQuarto())
                     {
                         GameObject quartoText = Instantiate(QuartoText);
+                        turnText.text = "YOU WIN!";
                         isEnd = true;
                         Debug.Log((float)sw.ElapsedMilliseconds / sumCount);
                         return;
@@ -105,12 +112,33 @@ public class GameController : MonoBehaviour
                         GameObject quartoText = Instantiate(QuartoText);
                         quartoText.GetComponent<TextMesh>().text = "DRAW";
                         quartoText.GetComponent<TextMesh>().color = Color.blue;
+                        turnText.text = "DRAW";
+                        turnText.color = Color.blue;
                         isEnd = true;
                         return;
                     }
                 }
             }
         } else if (turn == COM && !isComWorking) {
+            Vector3 position;
+            if (phase == PIECE) {
+                isComWorking = true;
+                selectedPiece = GameObject.Find("Piece_0000");
+                pieceName = "Piece_0000";
+                alreadyPut.Add("Piece_0000");
+                remainingPieces.Remove("Piece_0000");
+
+                position = selectedPiece.transform.position;
+                position.x = -11;
+                position.z = 0;
+                selectedPiece.transform.position = position;
+                phase = PUT;
+                turn = !turn;
+                turnText.text = "TURN: YOU";
+                turnText.color = Color.red;
+                isComWorking = false;
+                return;
+            }
             sw.Start();
             sumCount++;
             isComWorking = true;
@@ -123,7 +151,7 @@ public class GameController : MonoBehaviour
 
             // phase == PUT
             squares[nextX][nextZ] = pieceName.Substring(6, 4);
-            Vector3 position = selectedPiece.transform.position;
+            position = selectedPiece.transform.position;
             position.x = nextX * 2 - 3;
             position.z = nextZ * 2 - 3;
             selectedPiece.transform.position = position;
@@ -132,6 +160,8 @@ public class GameController : MonoBehaviour
             {
                 sw.Stop();
                 GameObject quartoText = Instantiate(QuartoText);
+                turnText.text = "COM WIN!";
+                turnText.color = Color.red;
                 isEnd = true;
                 Debug.Log((float)sw.ElapsedMilliseconds / sumCount);
                 return;
@@ -150,6 +180,8 @@ public class GameController : MonoBehaviour
             selectedPiece.transform.position = position;
             phase = PUT;
             turn = !turn;
+            turnText.text = "TURN: YOU";
+            turnText.color = Color.red;
             isComWorking = false;
             sw.Stop();
             Debug.Log(sw.ElapsedMilliseconds + "ms");
