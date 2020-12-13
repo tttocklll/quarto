@@ -39,8 +39,8 @@ public class GameController : MonoBehaviour
     private bool isEnd = false;
     private bool ALPHA_BETA = true;
     private const int DEPTH = 3;
-    private const int MAX_VAL = 100;
-    private const int MIN_VAL = -100;
+    private const int MAX_VAL = 1000;
+    private const int MIN_VAL = -1000;
 
     // stopwatch
     private System.Diagnostics.Stopwatch sw;
@@ -215,10 +215,6 @@ public class GameController : MonoBehaviour
                 // 手を打つ
                 squares[move.x][move.z] = nextPiece.Substring(6, 4);
                 curVal = getHeuristicVal();
-                // if (curVal == 100) {
-                //     Debug.LogFormat("WINorLOSE: {0} ({1}, {2})", nextPiece, move.x, move.z);
-                //     displayBoard();
-                // }
                 // 手を戻す
                 squares[move.x][move.z] = "";
 
