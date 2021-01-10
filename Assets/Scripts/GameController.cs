@@ -27,18 +27,18 @@ public class GameController : MonoBehaviour
     // turn
     private const bool COM = false;
     private const bool YOU = true;
-    private bool turn = YOU;
+    private bool turn = YOU; // 先手を設定
     private bool isComWorking = false;
     Text turnText;
 
     // misc
     private string selectedName;
     private string pieceName;
-    private List<string> alreadyPut = new List<string>(); // いらないかも
+    private List<string> alreadyPut = new List<string>();
     private List<string> remainingPieces = new List<string>();
     private bool isEnd = false;
-    private bool ALPHA_BETA = true;
-    private const int DEPTH = 3;
+    private bool ALPHA_BETA = true; // true ? alpha-beta : minimax
+    private const int DEPTH = 3; // 探索の深さ
     private const int MAX_VAL = 1000;
     private const int MIN_VAL = -1000;
 
@@ -61,7 +61,68 @@ public class GameController : MonoBehaviour
     void Update()
     {
         if (isEnd) return;
-        if (Input.GetMouseButtonDown(0) && turn == YOU) {
+
+        // 対ランダム用
+
+        // if (turn == YOU)
+        // {
+        //     if (phase == PIECE)
+        //     {
+        //         pieceName = randPiece();
+        //         selectedPiece = GameObject.Find(pieceName);
+        //         Debug.LogFormat("YOU PIECE: {0}", pieceName);
+        //         alreadyPut.Add(pieceName);
+        //         remainingPieces.Remove(pieceName);
+
+        //         Vector3 position = selectedPiece.transform.position;
+        //         position.x = -11;
+        //         position.z = 0;
+        //         selectedPiece.transform.position = position;
+        //         phase = PUT;
+        //         turn = !turn;
+        //         turnText.text = "TURN: COM";
+        //         turnText.color = Color.white;
+        //     }
+        //     else if (phase == PUT)
+        //     {
+        //         var (nextX, nextZ) = randPut();
+
+        //         Debug.LogFormat("YOU PUT: ({0}, {1})", nextX, nextZ);
+
+        //         // phase == PUT
+        //         squares[nextX][nextZ] = pieceName.Substring(6, 4);
+        //         Vector3 position = selectedPiece.transform.position;
+        //         position.x = nextX * 2 - 3;
+        //         position.z = nextZ * 2 - 3;
+        //         selectedPiece.transform.position = position;
+        //         phase = PIECE;
+
+        //         // displayBoard();
+
+        //         // 勝利判定
+        //         if (isQuarto())
+        //         {
+        //             GameObject quartoText = Instantiate(QuartoText);
+        //             turnText.text = "YOU WIN!";
+        //             isEnd = true;
+        //             Debug.Log((float)sw.ElapsedMilliseconds / sumCount);
+        //             return;
+        //         } else if (remainingPieces.Count <= 0) {
+        //             GameObject quartoText = Instantiate(QuartoText);
+        //             quartoText.GetComponent<TextMesh>().text = "DRAW";
+        //             quartoText.GetComponent<TextMesh>().color = Color.blue;
+        //             turnText.text = "DRAW";
+        //             turnText.color = Color.blue;
+        //             isEnd = true;
+        //             return;
+        //         }
+        //     }
+        // }
+
+        // 対人用
+
+        if (Input.GetMouseButtonDown(0) && turn == YOU)
+        {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out hit, Mathf.Infinity)) {
                 selectedObj = hit.collider.gameObject;
@@ -72,7 +133,7 @@ public class GameController : MonoBehaviour
 
                     selectedPiece = selectedObj;
                     pieceName = selectedName;
-                    Debug.LogFormat("YOU PIECE: {0}", selectedName);
+                    // Debug.LogFormat("YOU PIECE: {0}", selectedName);
                     alreadyPut.Add(pieceName);
                     remainingPieces.Remove(pieceName);
 
@@ -93,7 +154,7 @@ public class GameController : MonoBehaviour
                     // すでにおいてあったらだめ
                     if (!string.IsNullOrEmpty(squares[x][z])) return;
 
-                    Debug.LogFormat("YOU PUT: ({0}, {1})", x, z);
+                    // Debug.LogFormat("YOU PUT: ({0}, {1})", x, z);
                     squares[x][z] = pieceName.Substring(6, 4);
                     selectedPiece.transform.position = position;
                     phase = PIECE;
@@ -119,7 +180,10 @@ public class GameController : MonoBehaviour
                     }
                 }
             }
-        } else if (turn == COM && !isComWorking) {
+        }
+        // main of AI
+        else if (turn == COM && !isComWorking)
+        {
             Vector3 position;
             if (phase == PIECE) {
                 isComWorking = true;
@@ -145,6 +209,10 @@ public class GameController : MonoBehaviour
             int nextX, nextZ, eval;
             string nextPiece;
             (eval, nextX, nextZ, nextPiece) = negaMax(0, pieceName, remainingPieces, MIN_VAL, MAX_VAL);
+            if (eval == -1000) {
+                (nextX, nextZ) = randPut();
+                nextPiece = randPiece();
+            }
             Debug.LogFormat("COM PUT: ({0}, {1})", nextX, nextZ);
             Debug.LogFormat("COM PIECE: {0}", nextPiece);
             Debug.LogFormat("COM EVAL: {0}", eval);
@@ -161,9 +229,17 @@ public class GameController : MonoBehaviour
                 sw.Stop();
                 GameObject quartoText = Instantiate(QuartoText);
                 turnText.text = "COM WIN!";
-                turnText.color = Color.red;
+                turnText.color = Color.green;
                 isEnd = true;
                 Debug.Log((float)sw.ElapsedMilliseconds / sumCount);
+                return;
+            }else if (remainingPieces.Count <= 0) {
+                GameObject quartoText = Instantiate(QuartoText);
+                quartoText.GetComponent<TextMesh>().text = "DRAW";
+                quartoText.GetComponent<TextMesh>().color = Color.blue;
+                turnText.text = "DRAW";
+                turnText.color = Color.blue;
+                isEnd = true;
                 return;
             }
             phase = PIECE;
@@ -362,6 +438,8 @@ public class GameController : MonoBehaviour
                 state[result[idx]]++;
             }
         }
+        // return (state[4] > 0) ? MAX_VAL : state[3];
+        // return (state[4] > 0) ? MAX_VAL : state[3] * 2 - state[2];
         return (state[4] > 0) ? MAX_VAL : state[3] * 10 + state[2] * 3;
     }
 
@@ -475,5 +553,31 @@ public class GameController : MonoBehaviour
             array[i] = fillItem;
         }
         return array;
+    }
+
+    // random
+    private string randPiece() {
+        if (remainingPieces.Count <= 0) return "";
+        int curRnd;
+        string pieceName;
+        while (true) {
+            curRnd = Random.Range(0, 16);
+            pieceName = "Piece_" + System.Convert.ToString(curRnd, 2).PadLeft(4, '0');
+            if (!alreadyPut.Contains(pieceName)) {
+                alreadyPut.Add(pieceName);
+                return pieceName;
+            }
+        }
+    }
+
+    private (int, int) randPut() {
+        int x, z;
+        while (true) {
+            x = Random.Range(0, 4);
+            z = Random.Range(0, 4);
+            if (string.IsNullOrEmpty(squares[x][z])) {
+                return (x, z);
+            }
+        }
     }
 }
